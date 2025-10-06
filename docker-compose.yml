@@ -45,9 +45,12 @@ services:
       POSTGRES_DB: cvat
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-      - cvat_db:/var/lib/postgresql/data
+      - ./_DATA/cvat_db:/var/lib/postgresql/data
     networks:
       - cvat
+    ports:
+      - target: 5432
+        published: 15432
 
   cvat_redis_inmem:
     container_name: cvat_redis_inmem
@@ -59,7 +62,7 @@ services:
       "--appendonly", "yes",
     ]
     volumes:
-      - cvat_inmem_db:/data
+      - ./_DATA/cvat_inmem_db:/data
     networks:
       - cvat
 
@@ -74,11 +77,13 @@ services:
     # Use a separate init process as a workaround.
     init: true
     volumes:
-      - cvat_cache_db:/var/lib/kvrocks
+      - ./_DATA/cvat_cache_db:/var/lib/kvrocks/data
     networks:
       - cvat
     command: [
-      "--compact-cron", "0 3 * * *",
+      "--dir", "/var/lib/kvrocks/data",
+      "--compact-cron", "0 * * * *",
+      "--max-db-size", "180"
       ]
 
   cvat_server:
@@ -97,6 +102,7 @@ services:
       ADAPTIVE_AUTO_ANNOTATION: 'false'
       NUMPROCS: 2
       CVAT_ANALYTICS: 1
+      DISK_USAGE_MAX: 96
       CVAT_BASE_URL:
       ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
     command: init run server
@@ -109,9 +115,9 @@ services:
           || PathPrefix(`/django-rq`))
       traefik.http.routers.cvat.entrypoints: web
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
+      - ./_DATA/cvat_data:/home/django/data
+      - ./_DATA/cvat_keys:/home/django/keys
+      - ./_DATA/cvat_logs:/home/django/logs
     networks:
       cvat:
         aliases:
@@ -128,9 +134,9 @@ services:
       NUMPROCS: 1
     command: run worker notifications cleaning
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
+      - ./_DATA/cvat_data:/home/django/data
+      - ./_DATA/cvat_keys:/home/django/keys
+      - ./_DATA/cvat_logs:/home/django/logs
     networks:
       - cvat
 
@@ -144,9 +150,9 @@ services:
       NUMPROCS: 2
     command: run worker import
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
+      - ./_DATA/cvat_data:/home/django/data
+      - ./_DATA/cvat_keys:/home/django/keys
+      - ./_DATA/cvat_logs:/home/django/logs
     networks:
       - cvat
 
@@ -160,9 +166,9 @@ services:
       NUMPROCS: 2
     command: run worker export
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
+      - ./_DATA/cvat_data:/home/django/data
+      - ./_DATA/cvat_keys:/home/django/keys
+      - ./_DATA/cvat_logs:/home/django/logs
     networks:
       - cvat
 
@@ -176,9 +182,9 @@ services:
       NUMPROCS: 1
     command: run worker annotation
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
+      - ./_DATA/cvat_data:/home/django/data
+      - ./_DATA/cvat_keys:/home/django/keys
+      - ./_DATA/cvat_logs:/home/django/logs
     networks:
       - cvat
 
@@ -192,9 +198,9 @@ services:
       NUMPROCS: 1
     command: run worker webhooks
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
+      - ./_DATA/cvat_data:/home/django/data
+      - ./_DATA/cvat_keys:/home/django/keys
+      - ./_DATA/cvat_logs:/home/django/logs
     networks:
       - cvat
 
@@ -208,9 +214,9 @@ services:
       NUMPROCS: 1
     command: run worker quality_reports
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
+      - ./_DATA/cvat_data:/home/django/data
+      - ./_DATA/cvat_keys:/home/django/keys
+      - ./_DATA/cvat_logs:/home/django/logs
     networks:
       - cvat
 
@@ -224,9 +230,9 @@ services:
       NUMPROCS: 2
     command: run worker chunks
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
+      - ./_DATA/cvat_data:/home/django/data
+      - ./_DATA/cvat_keys:/home/django/keys
+      - ./_DATA/cvat_logs:/home/django/logs
     networks:
       - cvat
 
@@ -240,9 +246,9 @@ services:
       NUMPROCS: 1
     command: run worker consensus
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
+      - ./_DATA/cvat_data:/home/django/data
+      - ./_DATA/cvat_keys:/home/django/keys
+      - ./_DATA/cvat_logs:/home/django/logs
     networks:
       - cvat
 
@@ -339,7 +345,7 @@ services:
         aliases:
           - clickhouse
     volumes:
-      - cvat_events_db:/var/lib/clickhouse/
+      - ./_DATA/cvat_events_db:/var/lib/clickhouse/
 
   cvat_vector:
     container_name: cvat_vector
@@ -416,15 +422,6 @@ services:
       cvat:
         aliases:
           - grafana
-
-volumes:
-  cvat_db:
-  cvat_data:
-  cvat_keys:
-  cvat_logs:
-  cvat_inmem_db:
-  cvat_events_db:
-  cvat_cache_db:
 
 networks:
   cvat:
