@@ -85,7 +85,7 @@ services:
     command: [
       "--dir", "/var/lib/kvrocks/data",
       "--compact-cron", "0 * * * *",
-      "--max-db-size", "180"
+      "--max-db-size", "${CACHE_DB_MAX_SIZE_GB:-256}"
       ]
 
   cvat_server:
